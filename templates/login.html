@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tabs-container">
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('staff')">👤 Staff Login</button>
+        <button class="tab-button" onclick="switchTab('admin')">🔐 Admin Access</button>
+    </div>
+
+    <!-- Staff Login Tab -->
+    <div id="staff-tab" class="tab-content active">
+        <h2>Staff Emergency Login</h2>
+        <p class="subtitle">Please enter your credentials to report your status.</p>
+        
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="login_type" value="staff">
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" 
+                       id="phone" 
+                       name="phone" 
+                       placeholder="e.g. 03463259079"
+                       required>
+                <small>Enter your registered phone number</small>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" 
+                       id="password" 
+                       name="password" 
+                       required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Login / Report Status</button>
+        </form>
+    </div>
+
+    <!-- Admin Login Tab -->
+    <div id="admin-tab" class="tab-content">
+        <h2>Administrator Access</h2>
+        <p class="subtitle">Enter admin credentials to access the dashboard.</p>
+        
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="login_type" value="admin">
+            
+            <div class="form-group">
+                <label for="admin_password">Admin Password</label>
+                <input type="password" 
+                       id="admin_password" 
+                       name="admin_password" 
+                       required>
+                <small>Enter admin password to access dashboard</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Login as Admin</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Set button active
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

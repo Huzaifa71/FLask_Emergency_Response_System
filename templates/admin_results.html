@@ -1,0 +1,295 @@
+{% extends "admin_base.html" %}
+
+{% block extra_css %}
+<style>
+    /* Sentiment Layout: Chart on left, Cards on right */
+    .sentiment-dashboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: stretch;
+        margin-bottom: 2rem;
+    }
+
+    .chart-container {
+        flex: 1;
+        min-width: 300px;
+        background: var(--bg-secondary);
+        padding: 20px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sentiment-stats {
+        flex: 1;
+        min-width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .sentiment-stats .sentiment-card {
+        margin: 0;
+        width: 100%;
+    }
+
+    canvas {
+        max-width: 100% !important;
+        max-height: 250px !important;
+    }
+
+    /* 2. STICKY TABLE HEADERS & FIXED HEIGHT */
+    .table-container {
+        max-height: 500px; 
+        overflow-y: auto;  
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        position: relative;
+    }
+
+    .data-table {
+        border-collapse: collapse; 
+        width: 100%;
+    }
+
+    .data-table thead th {
+        position: sticky;
+        top: 0;
+        background-color: var(--bg-secondary);
+        z-index: 10;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Alert Animation */
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+    }
+    .needs-help-active {
+        animation: pulse-red 2s infinite;
+        border: 2px solid var(--color-danger) !important;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2>Poll Results & Analytics</h2>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-value" id="live-total-staff">{{ total_employees }}</div>
+        <div class="metric-label">Total Staff</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value" id="live-voted">{{ total_voted }}</div>
+        <div class="metric-label">Voted</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value" id="live-not-voted">{{ total_not_voted }}</div>
+        <div class="metric-label">Not Voted</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-value" id="live-participation">{{ participation_rate }}%</div>
+        <div class="metric-label">Turnout</div>
+    </div>
+</div>
+
+{% if has_data %}
+<div class="section">
+    <h3>Live Sentiment Analysis</h3>
+    <div class="sentiment-dashboard">
+        <div class="chart-container">
+            <canvas id="sentimentChart"></canvas>
+        </div>
+
+        <div class="sentiment-stats">
+            <div class="sentiment-card sentiment-ok">
+                <div class="sentiment-value" id="live-ok">{{ ok_count }}</div>
+                <div class="sentiment-label">I am okay and safe</div>
+            </div>
+            <div class="sentiment-card sentiment-warning">
+                <div class="sentiment-value" id="live-not-ok">{{ not_ok_count }}</div>
+                <div class="sentiment-label">Stuck (No Help Needed)</div>
+            </div>
+            <div class="sentiment-card sentiment-danger">
+                <div class="sentiment-value" id="live-help">{{ help_needed_count }}</div>
+                <div class="sentiment-label">Help Needed</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Search Responses</h3>
+    <input type="text" id="searchInput" placeholder="🔍 Find by name or phone..." class="search-input" onkeyup="filterTable()">
+    
+    <div class="table-container">
+        <table class="data-table" id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Phone</th>
+                    <th>Response</th>
+                    <th>Timestamp</th>
+                    {% if results_data and results_data|length > 0 %}
+                        {% for key in results_data[0].keys() %}
+                            {% if key not in ['phone', 'response', 'timestamp'] %}
+                                <th>{{ key | title }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results_data %}
+                <tr>
+                    <td>{{ row.phone }}</td>
+                    <td>
+                        <span class="response-badge 
+                            {% if 'okay' in row.response.lower() %}badge-ok
+                            {% elif 'help is needed' in row.response.lower() %}badge-danger
+                            {% else %}badge-warning{% endif %}">
+                            {{ row.response }}
+                        </span>
+                    </td>
+                    <td>{{ row.timestamp }}</td>
+                    {% for key, value in row.items() %}
+                        {% if key not in ['phone', 'response', 'timestamp'] %}
+                            <td>{{ value if value else 'N/A' }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    📭 No responses received yet. Data will appear automatically as it arrives.
+</div>
+{% endif %}
+
+<div class="section">
+    <h3>Export Data</h3>
+    <div class="button-grid">
+        <a href="{{ url_for('download_report', report_type='voted') }}" class="btn btn-primary {% if not has_data %}btn-disabled{% endif %}">✅ Download Voted</a>
+        <a href="{{ url_for('download_report', report_type='not_voted') }}" class="btn btn-secondary {% if total_not_voted == 0 %}btn-disabled{% endif %}">❌ Download Not Voted</a>
+    </div>
+</div>
+
+<script>
+let sentimentChart;
+
+function initOrUpdateChart(data) {
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    const chartConfig = {
+        labels: ['Safe', 'Stuck', 'Help!'],
+        datasets: [{
+            data: [data.ok_count, data.not_ok_count, data.help_needed_count],
+            backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c'],
+            borderColor: '#1a1d24',
+            borderWidth: 2
+        }]
+    };
+
+    if (sentimentChart) {
+        sentimentChart.data = chartConfig;
+        sentimentChart.update();
+    } else {
+        sentimentChart = new Chart(ctx, {
+            type: 'pie',
+            data: chartConfig,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#fff', padding: 20 } }
+                }
+            }
+        });
+    }
+}
+
+// 4. AUTO-UPDATING THE TABLE BODY
+function updateLiveTable(rows) {
+    const tbody = document.querySelector('#resultsTable tbody');
+    if (!tbody || !rows) return;
+
+    tbody.innerHTML = '';
+    rows.forEach(row => {
+        let badgeClass = 'badge-warning';
+        if (row.response.toLowerCase().includes('okay')) badgeClass = 'badge-ok';
+        if (row.response.toLowerCase().includes('help is needed')) badgeClass = 'badge-danger';
+
+        let extraCols = '';
+        const standardKeys = ['phone', 'response', 'timestamp'];
+        Object.keys(row).forEach(key => {
+            if (!standardKeys.includes(key)) {
+                extraCols += `<td>${row[key] || 'N/A'}</td>`;
+            }
+        });
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${row.phone}</td>
+                <td><span class="response-badge ${badgeClass}">${row.response}</span></td>
+                <td>${row.timestamp}</td>
+                ${extraCols}
+            </tr>
+        `;
+    });
+}
+
+function refreshData() {
+    fetch('/api/stats')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('live-total-staff').innerText = data.total_employees;
+            document.getElementById('live-voted').innerText = data.total_voted;
+            document.getElementById('live-not-voted').innerText = data.total_not_voted;
+            document.getElementById('live-participation').innerText = data.participation_rate + '%';
+            document.getElementById('live-ok').innerText = data.ok_count;
+            document.getElementById('live-not-ok').innerText = data.not_ok_count;
+            document.getElementById('live-help').innerText = data.help_needed_count;
+
+            initOrUpdateChart(data);
+            
+            // Rebuild the table with new data from API
+            if (data.table_data) {
+                updateLiveTable(data.table_data);
+            }
+
+            const dangerCard = document.getElementById('danger-card');
+            if(data.help_needed_count > 0) {
+                dangerCard.classList.add('needs-help-active');
+            } else {
+                dangerCard.classList.remove('needs-help-active');
+            }
+        });
+}
+
+setInterval(refreshData, 10000);
+
+function filterTable() {
+    const filter = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#resultsTable tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
+    });
+}
+
+{% if has_data %}
+initOrUpdateChart({
+    ok_count: {{ ok_count }},
+    not_ok_count: {{ not_ok_count }},
+    help_needed_count: {{ help_needed_count }}
+});
+{% endif %}
+</script>
+{% endblock %}

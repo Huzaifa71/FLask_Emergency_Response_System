@@ -1,0 +1,170 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+<h2>Application Configuration</h2>
+
+<form method="POST" action="{{ url_for('admin_settings') }}">
+    <input type="hidden" name="action" value="save_settings">
+    
+    <div class="section">
+        <h3>Timezone</h3>
+        <div class="form-group">
+            <label>Select Timezone</label>
+            <select name="timezone" required>
+                {% for tz in timezones %}
+                <option value="{{ tz }}" {% if tz == current_timezone %}selected{% endif %}>
+                    {{ tz }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Time Display Format</h3>
+        <div class="form-group">
+            <label class="radio-option">
+                <input type="radio" 
+                       name="time_format" 
+                       value="12" 
+                       {% if current_time_format == '12' %}checked{% endif %}>
+                <span class="radio-label">12-hour (AM/PM)</span>
+            </label>
+            <label class="radio-option">
+                <input type="radio" 
+                       name="time_format" 
+                       value="24"
+                       {% if current_time_format == '24' %}checked{% endif %}>
+                <span class="radio-label">24-hour</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Poll Schedule</h3>
+        <div class="form-row">
+            <div class="form-col">
+                <label>Start Date</label>
+                <input type="date" 
+                       name="start_date" 
+                       value="{{ poll_start.strftime('%Y-%m-%d') }}" 
+                       required>
+            </div>
+            <div class="form-col">
+                <label>Start Time</label>
+                <input type="time" 
+                       name="start_time" 
+                       value="{{ poll_start.strftime('%H:%M') }}" 
+                       required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-col">
+                <label>End Date</label>
+                <input type="date" 
+                       name="end_date" 
+                       value="{{ poll_end.strftime('%Y-%m-%d') }}" 
+                       required>
+            </div>
+            <div class="form-col">
+                <label>End Time</label>
+                <input type="time" 
+                       name="end_time" 
+                       value="{{ poll_end.strftime('%H:%M') }}" 
+                       required>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Phone Column Name</h3>
+        <div class="form-group">
+            <label>Excel column name</label>
+            <input type="text" 
+                   name="col_phone" 
+                   value="{{ current_col_phone }}" 
+                   placeholder="Phone"
+                   required>
+            <small>Exact column name in Excel with phone numbers</small>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Phone Validation</h3>
+        <div class="form-group">
+            <label>Validation mode</label>
+            <select name="validation_mode" required>
+                <option value="flexible" {% if current_validation == 'flexible' %}selected{% endif %}>
+                    Flexible (International)
+                </option>
+                <option value="strict" {% if current_validation == 'strict' %}selected{% endif %}>
+                    Strict (Pakistan only)
+                </option>
+            </select>
+            <small>Strict: Pakistan only | Flexible: International</small>
+        </div>
+    </div>
+
+    <div class="button-grid">
+        <button type="submit" class="btn btn-primary">
+            💾 Save All Settings
+        </button>
+        <button type="button" 
+                class="btn btn-secondary" 
+                onclick="resetSettings()">
+            🔄 Reset to Defaults
+        </button>
+    </div>
+</form>
+
+<hr>
+
+<div class="section">
+    <h3>Advanced Operations</h3>
+    <div class="alert alert-warning">
+        <strong>⚠️ Warning:</strong> The actions below are permanent and cannot be undone.
+    </div>
+    
+    <form method="POST" action="{{ url_for('admin_settings') }}" style="margin-bottom: 1rem;">
+        <input type="hidden" name="action" value="clear_responses">
+        <label class="checkbox-option">
+            <input type="checkbox" id="confirmResp" required>
+            <span>Confirm: Delete all responses (keeps employees)</span>
+        </label>
+        <button type="submit" class="btn btn-secondary btn-block">
+            🗑️ Clear Responses
+        </button>
+    </form>
+    
+    <form method="POST" action="{{ url_for('admin_settings') }}" style="margin-bottom: 1rem;">
+        <input type="hidden" name="action" value="reset_database">
+        <label class="checkbox-option">
+            <input type="checkbox" id="confirmAll" required>
+            <span>Confirm: Delete EVERYTHING (responses + employees)</span>
+        </label>
+        <button type="submit" class="btn btn-secondary btn-block">
+            💀 Reset Database
+        </button>
+    </form>
+</div>
+
+<script>
+function resetSettings() {
+    if (confirm('Reset all settings to defaults? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("admin_settings") }}';
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'action';
+        input.value = 'reset_settings';
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

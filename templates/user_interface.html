@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Emergency Feedback{% endblock %}
+
+{% block header_title %}Staff Emergency Feedback{% endblock %}
+
+{% block content %}
+<div class="user-info-container">
+    <div class="info-box info-primary">
+        <strong>👤 Welcome:</strong> {{ display_name }}
+    </div>
+    
+    {% if not poll_ended and not poll_not_started %}
+    <div class="info-box info-warning">
+        <strong>🕒 Time left:</strong> {{ timer_str }}
+    </div>
+    {% endif %}
+</div>
+
+{% if poll_not_started %}
+    <div class="alert alert-warning">
+        <strong>⏳ Poll opens on {{ poll_start }}</strong>
+    </div>
+{% elif poll_ended %}
+    <div class="alert alert-error">
+        <strong>🚫 This poll closed on {{ poll_end }}</strong>
+    </div>
+{% elif already_voted %}
+    <div class="alert alert-success">
+        <strong>✅ Thank you! Your response has been recorded.</strong>
+    </div>
+    <div class="alert alert-info">
+        You can only submit one response per poll.
+    </div>
+{% else %}
+    <div class="response-form">
+        <h2>Please report your status, your safety is our concern.</h2>
+        <p class="subtitle">Your feedback helps us improve our YKK Pakistan working environment.</p>
+        
+        <form method="POST" action="{{ url_for('submit_vote') }}" id="voteForm">
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="response" value="I am okay and safe." required>
+                    <span class="radio-label">I am okay and safe.</span>
+                </label>
+                
+                <label class="radio-option">
+                    <input type="radio" name="response" value="I am stuck but help not needed.">
+                    <span class="radio-label">I am stuck but help not needed.</span>
+                </label>
+                
+                <label class="radio-option">
+                    <input type="radio" name="response" value="I am stuck and help is needed.">
+                    <span class="radio-label">I am stuck and help is needed.</span>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block" id="submitBtn" disabled>
+                Submit Response
+            </button>
+        </form>
+    </div>
+{% endif %}
+
+<hr>
+
+<a href="{{ url_for('logout') }}" class="btn btn-secondary btn-block">🚪 Log Out</a>
+
+<script>
+// 1. Fixed the "red underline" by wrapping Jinja tags in quotes
+const pollEnded = "{{ poll_ended }}".toLowerCase() === "true";
+const alreadyVoted = "{{ already_voted }}".toLowerCase() === "true";
+const submitBtn = document.getElementById('submitBtn');
+
+// Enable submit button based on selection
+document.querySelectorAll('input[name="response"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (submitBtn) submitBtn.disabled = false;
+    });
+});
+
+// 2. Smart Refresh: Only reloads if the user hasn't selected an option yet
+if (!pollEnded && !alreadyVoted) {
+    setInterval(function() {
+        // Check if a radio button is currently picked
+        const isSelected = document.querySelector('input[name="response"]:checked');
+        
+        // Only refresh if the user is idle (nothing selected)
+        if (!isSelected) {
+            location.reload();
+        }
+    }, 60000);
+}
+</script>
+{% endblock %}

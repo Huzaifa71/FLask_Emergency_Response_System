@@ -1,0 +1,80 @@
+{% extends "admin_base.html" %}
+
+{% block admin_content %}
+<h2>Employee Database Management</h2>
+
+<div class="alert alert-info">
+    Current phone column: <strong>{{ col_phone }}</strong> (change in Settings if needed)
+</div>
+
+<div class="section">
+    <h3>📁 Upload Excel File (.xlsx)</h3>
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <div class="form-group">
+            <input type="file" 
+                   name="file" 
+                   accept=".xlsx" 
+                   required
+                   onchange="showFileName(this)">
+            <small>File must contain a '{{ col_phone }}' column</small>
+            <div id="fileName" class="file-name"></div>
+        </div>
+        
+        <button type="submit" 
+                class="btn btn-primary" 
+                onclick="return confirm('This will overwrite the existing database. Continue?')">
+            🔥 Confirm Upload & Overwrite Database
+        </button>
+    </form>
+</div>
+
+<hr>
+
+<div class="section">
+    <h3>Current Employee Database</h3>
+    
+    {% if employees_data %}
+    <p class="subtitle">Total: {{ employee_count }} employees</p>
+    
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Phone</th>
+                    {% if employees_data|length > 0 %}
+                        {% for key in employees_data[0].keys() %}
+                            {% if key != 'phone' %}
+                                <th>{{ key }}</th>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees_data %}
+                <tr>
+                    <td>{{ employee.phone }}</td>
+                    {% for key, value in employee.items() %}
+                        {% if key != 'phone' %}
+                            <td>{{ value if value else '' }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        ⚠️ No employees in database yet.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showFileName(input) {
+    const fileName = input.files[0] ? input.files[0].name : '';
+    document.getElementById('fileName').textContent = fileName ? 'Selected: ' + fileName : '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block header_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div class="alert alert-success" style="margin-bottom: 1rem;">
+        ✅ Logged in as Administrator
+    </div>
+    <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="float: right; margin-top: -3.5rem;">
+        🔒 Logout
+    </a>
+    <div style="clear: both;"></div>
+</div>
+
+<hr>
+
+<!-- Admin Navigation Tabs -->
+<div class="admin-tabs">
+    <a href="{{ url_for('admin_results') }}" 
+       class="admin-tab-button {% if active_tab == 'results' %}active{% endif %}">
+        📊 View Results
+    </a>
+    <a href="{{ url_for('admin_users') }}" 
+       class="admin-tab-button {% if active_tab == 'users' %}active{% endif %}">
+        👥 Manage Users
+    </a>
+    <a href="{{ url_for('admin_settings') }}" 
+       class="admin-tab-button {% if active_tab == 'settings' %}active{% endif %}">
+        ⚙️ Settings
+    </a>
+</div>
+
+<hr>
+
+<!-- Tab Content -->
+{% block admin_content %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}YKK Emergency Response System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-container">
+            <div class="header-logo">
+                <img src="{{ url_for('static', filename='images/trans_logo.png') }}" 
+                     alt="YKK Logo" 
+                     width="100"
+                     onerror="this.style.display='none'">
+            </div>
+            <div class="header-title">
+                <h1>{% block header_title %}Emergency Response System{% endblock %}</h1>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+
+        <!-- Footer -->
+        <hr>
+        <div class="footer">
+            Developed by PAK IT © 2026
+        </div>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
